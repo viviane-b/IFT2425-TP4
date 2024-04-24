@@ -474,6 +474,61 @@ void Fill_Pict(float** MatPts,float** MatPict,int PtsNumber,int NbPts)
 // FONCTIONS TPs----------------------------------                      
 //------------------------------------------------
 
+// Euler
+
+bool Euler (float t, float x, float y, float u, float v, float coordAimants[3][2], float *result, float **MatPts) {
+  float sumX;
+  float sumY;
+  int count = 0;
+  int aimant;
+  //float xy[2];
+  for (int i = 0; i<(int)(NB_INTERV); i++) {
+    sumX = 0;
+    sumY = 0;
+    x += H*u;
+    y += H*v;
+    for (int j=0;j<3;j++){
+      sumX += (coordAimants[j][0]-x)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+    }
+    for (int j=0;j<3;j++){
+      sumY += (coordAimants[j][1]-y)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+    }
+    u += H*(sumX - R*u -C*x);
+    v += H*(sumY -R*v -C*y);
+
+    if (sqrt(pow((x-X_1),2)+pow((y-Y_1),2))<0.5) {
+      aimant = 1;
+      count += 1;
+    } else if (sqrt(pow((x-X_2),2)+pow((y-Y_2),2))<0.5) {
+      aimant = 2;
+      count +=1;
+    } else if (sqrt(pow((x-X_3),2)+pow((y-Y_3),2))<0.5) {
+      aimant =3;
+      count+=1;
+    } else {
+      count = 0;
+    }
+    
+    printf("aimant = %d, count = %d \n", aimant, count);
+
+  }
+
+  // convergence si count >20
+
+  result[0] = x;
+  result[1] = y;
+  result[2] = u;
+  result[3] = v;
+
+  if (count>20){
+    return true;
+  } else {
+    return false;
+  }
+
+}
+
+
 
 //----------------------------------------------------------
 //----------------------------------------------------------
@@ -507,23 +562,36 @@ int main (int argc, char **argv)
   //>Question 2 
   //---------------------------------------------------------------------  
 
+  
+  float coordAimants[3][2] = {{X_1,Y_1}, {X_2, Y_2}, {X_3, Y_3}};
+  float result[4];    //[x,y,u,v]
+  bool b = Euler(0, 0.2, -1.6, 0, 0, coordAimants, result, MatPts);
+  printf("x=%f, y=%f, u=%f, v=%f, b = %d\n", result[0], result[1], result[2], result[3], b);
+
+  for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
+     {  MatPict[0][i][j]=(i+j*k*i)%255; 
+        MatPict[1][i][j]=(i+j*k*i)%255;
+        MatPict[2][i][j]=(i+j*k*i)%255;  }
+
+
+
   //Il faut travailler ici ...et dans > // FONCTIONS TPs
 
   //Un exemple ou la matrice de points MatPict est remplie
   //par une image couleur donné par l'équation d'en bas... et non pas par 
   //les bassins d'attractions
 
-  //for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
-  //   {  MatPict[k][i][j]=(i+j*k*i)%255; }
+  for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
+     {  MatPict[k][i][j]=(i+j*k*i)%255; }
 
   //Un exemple ou la matrice de points MatPict est remplie
   //par une image en niveaux de gris  donné par l'équation d'en bas... et non pas par 
   //la vitesse de convergence
 
-  for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
-     {  MatPict[0][i][j]=(i+j*k*i)%255; 
-        MatPict[1][i][j]=(i+j*k*i)%255;
-        MatPict[2][i][j]=(i+j*k*i)%255;  }
+  //for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
+  //   {  MatPict[0][i][j]=(i+j*k*i)%255; 
+  //      MatPict[1][i][j]=(i+j*k*i)%255;
+  //      MatPict[2][i][j]=(i+j*k*i)%255;  }
 
  
    //--Fin Question 2-----------------------------------------------------

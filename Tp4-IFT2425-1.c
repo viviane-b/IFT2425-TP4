@@ -324,6 +324,7 @@ void plot_point(float** MatPts,float** MatPict,int NbPts)
     }
 }
 
+
 //------------------------------------------------------------------------
 // Fill_Pict
 //------------------------------------------------------------------------
@@ -359,6 +360,122 @@ void Fill_Pict(float** MatPts,float** MatPict,int PtsNumber,int NbPts)
 //------------------------------------------------
       
 
+// Euler
+
+void Euler (float t, float x, float y, float u, float v, float coordAimants[3][2], float *result, float **MatPts) {
+  float sumX;
+  float sumY;
+  //float xy[2];
+  for (int i = 0; i<(int)(NB_INTERV); i++) {
+    sumX = 0;
+    sumY = 0;
+    x += H*u;
+    y += H*v;
+    for (int j=0;j<3;j++){
+      sumX += (coordAimants[j][0]-x)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+    }
+    for (int j=0;j<3;j++){
+      sumY += (coordAimants[j][1]-y)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+    }
+    u += H*(sumX - R*u -C*x);
+    v += H*(sumY -R*v -C*y);
+
+    
+    MatPts[i][0]=(x); 
+    MatPts[i][1]=(y); 
+    
+
+  }
+
+  result[0] = x;
+  result[1] = y;
+  result[2] = u;
+  result[3] = v;
+
+}
+
+//x
+float f1(float u) {
+  return u;
+}
+
+//y
+float f2(float v) {
+  return v;
+}
+
+//u
+float f3(float x, float y, float u, float coordAimants[3][2]) {
+  float sumX;
+  for (int j=0;j<3;j++){
+      sumX += (coordAimants[j][0]-x)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+    }
+    //printf("sumX=%f \t", sumX);
+    return (sumX - R*u -C*x);
+}
+
+//v
+float f4(float x, float y, float v, float coordAimants[3][2]) {
+  float sumY;
+  for (int j=0;j<3;j++){
+    sumY += (coordAimants[j][1]-y)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+  }
+  //printf("sumY=%f \t", sumY);
+  return (sumY-R*v-C*y);
+}
+
+
+void rungeKutta(float t, float x, float y, float u, float v, float coordAimants[3][2], float *result, float **MatPts) {
+  float k11, k12, k13, k14, k21, k22, k23, k24, k31, k32, k33, k34, k41, k42, k43, k44, k51, k52, k53, k54, k61, k62, k63, k64;
+
+  for (int i=0; i<NB_INTERV; i++){
+    k11 = H*f1(u);
+    k12 = H*f2(v);
+    k13 = H*f3(x,y,u,coordAimants);
+    k14 = H*f4(x,y,v,coordAimants);
+
+    k21 = H*f1(u+k13/4.0);
+    k22 = H*f2(v+k14/4.0);
+    k23 = H*f3(x+k11/4.0, y+k12/4.0, u+k13/4.0,coordAimants);
+    k24 = H*f4(x+k11/4.0, y+k12/4.0, v+k14/4.0,coordAimants);
+
+    k31 = H*f1(u+3.0/32*k13+9.0/32*k23);
+    k32 = H*f2(v+3.0/32*k14+9.0/32*k24);
+    k33 = H*f3(x+3.0/32*k11+9.0/32*k21, y+3.0/32*k12+9.0/32*k22, u+3.0/32*k13+9.0/32*k23, coordAimants);
+    k34 = H*f4(x+3.0/32*k11+9.0/32*k21, y+3.0/32*k12+9.0/32*k22, v+3.0/32*k14+9.0/32*k24, coordAimants);
+
+    k41 = H*f1(u+(1932.0*k13+7200.0*k23+7296.0*k33)/2197);
+    k42 = H*f2(v+(1932.0*k14+7200.0*k24+7296.0*k34)/2197);
+    k43 = H*f3(x+(1932.0*k11+7200.0*k21+7296.0*k31)/2197, y+(1932.0*k12+7200.0*k22+7296.0*k32)/2197, u+(1932.0*k13+7200.0*k23+7296.0*k33)/2197, coordAimants);
+    k44 = H*f4(x+(1932.0*k11+7200.0*k21+7296.0*k31)/2197, y+(1932.0*k12+7200.0*k22+7296.0*k32)/2197, v+(1932.0*k14+7200.0*k24+7296.0*k34)/2197, coordAimants);
+
+    k51 = H*f1(u+439.0/216*k13-8.0*k23+3680.0/513*k33-845.0/4104*k43);
+    k52 = H*f2(v+439.0/216*k14-8.0*k24+3680.0/513*k34-845.0/4104*k44);
+    k53 = H*f3(x+439.0/216*k11-8.0*k21+3680.0/513*k31-845.0/4104*k41, y+439.0/216*k12-8.0*k22+3680.0/513*k32-845.0/4104*k42, u+439.0/216*k13-8.0*k23+3680.0/513*k33-845.0/4104*k43, coordAimants);
+    k54 = H*f4(x+439.0/216*k11-8.0*k21+3680.0/513*k31-845.0/4104*k41, y+439.0/216*k12-8.0*k22+3680.0/513*k32-845.0/4104*k42, v+439.0/216*k14-8.0*k24+3680.0/513*k34-845.0/4104*k44, coordAimants);
+
+    k61 = H*f1(u-8.0/27*k13+2.0*k23-3544.0/2565*k33+1859.0/4104*k43-11.0/40*k53);
+    k62 = H*f2(v-8.0/27*k14+2.0*k24-3544.0/2565*k34+1859.0/4104*k44-11.0/40*k54);
+    k63 = H*f3(x-8.0/27*k11+2.0*k21-3544.0/2565*k31+1859.0/4104*k41-11.0/40*k51, y-8.0/27*k12+2.0*k22-3544.0/2565*k32+1859.0/4104*k42-11.0/40*k52, u-8.0/27*k13+2.0*k23-3544.0/2565*k33+1859.0/4104*k43-11.0/40*k53, coordAimants);
+    k64 = H*f4(x-8.0/27*k11+2.0*k21-3544.0/2565*k31+1859.0/4104*k41-11.0/40*k51, y-8.0/27*k12+2.0*k22-3544.0/2565*k32+1859.0/4104*k42-11.0/40*k52, v-8.0/27*k14+2.0*k24-3544.0/2565*k34+1859.0/4104*k44-11.0/40*k54, coordAimants);
+
+    x += 16.0/135*k11+6656.0/12825*k31+28561.0/56430*k41-9.0/50*k51+2.0/55*k61;
+    y += 16.0/135*k12+6656.0/12825*k32+28561.0/56430*k42-9.0/50*k52+2.0/55*k62;
+    u += 16.0/135*k13+6656.0/12825*k33+28561.0/56430*k43-9.0/50*k53+2.0/55*k63;
+    v += 16.0/135*k14+6656.0/12825*k34+28561.0/56430*k44-9.0/50*k54+2.0/55*k64;
+
+    //printf("i=%d, x=%f, y=%f, u=%f, v=%f\n", i, x,y,u,v);
+
+  }
+  result[0] = x;
+  result[1] = y;
+  result[2] = u;
+  result[3] = v;
+
+}
+
+
+
 //----------------------------------------------------------
 //----------------------------------------------------------
 // MAIN  
@@ -391,6 +508,23 @@ int main (int argc, char **argv)
   //>Question 1 
   //---------------------------------------------------------------------  
 
+  float coordAimants[3][2] = {{X_1,Y_1}, {X_2, Y_2}, {X_3, Y_3}};
+  //float C = 0.25;
+  //float R = 0.1;
+  //float D = 0.3;
+
+  float result[4];    //[x,y,u,v]
+  float x = 3.0/32;
+
+  
+  Euler(0, 0.2, -1.6, 0, 0, coordAimants, result, MatPts);
+  //rungeKutta(0, 1.2, -1.6, 0, 0, coordAimants, result, MatPts);
+
+  printf("x=%f, y=%f, u=%f, v=%f\n, 3/32 = %f", result[0], result[1], result[2], result[3], x);
+
+
+
+
   //Il faut travailler ici ...et dans > // FONCTIONS TPs
 
   //Un exemple ou la matrice de points est remplie
@@ -399,8 +533,8 @@ int main (int argc, char **argv)
  
   for(k=0;k<(int)(NB_INTERV);k++)
     { 
-      MatPts[k][0]=(k/(float)(NB_INTERV))*cos((k*0.0001)*3.14159); 
-      MatPts[k][1]=(k/(float)(NB_INTERV))*sin((k*0.001)*3.14159); 
+      //MatPts[k][0]=(k/(float)(NB_INTERV))*cos((k*0.0001)*3.14159); 
+      //MatPts[k][1]=(k/(float)(NB_INTERV))*sin((k*0.001)*3.14159); 
       //>on peut essayer la ligne d'en bas aussi
       //MatPts[k][1]=(k/(float)(NB_INTERV))*sin((k*0.0001)*3.14159); 
      }
