@@ -476,12 +476,12 @@ void Fill_Pict(float** MatPts,float** MatPict,int PtsNumber,int NbPts)
 
 // Euler
 
-bool Euler (float t, float x, float y, float u, float v, float coordAimants[3][2], float *result, float **MatPts) {
+int Euler (float t, float x, float y, float u, float v, float coordAimants[3][2], float *result, float **MatPts) {
   float sumX;
   float sumY;
   int count = 0;
   int aimant;
-  //float xy[2];
+  
   for (int i = 0; i<(int)(NB_INTERV); i++) {
     sumX = 0;
     sumY = 0;
@@ -506,10 +506,11 @@ bool Euler (float t, float x, float y, float u, float v, float coordAimants[3][2
       aimant =3;
       count+=1;
     } else {
+      aimant = 0;
       count = 0;
     }
     
-    printf("aimant = %d, count = %d \n", aimant, count);
+    //printf("aimant = %d, count = %d \n", aimant, count);
 
   }
 
@@ -521,9 +522,9 @@ bool Euler (float t, float x, float y, float u, float v, float coordAimants[3][2
   result[3] = v;
 
   if (count>20){
-    return true;
+    return count;
   } else {
-    return false;
+    return 0;
   }
 
 }
@@ -538,6 +539,7 @@ bool Euler (float t, float x, float y, float u, float v, float coordAimants[3][2
 int main (int argc, char **argv)
 {
   int i,j,k;
+  float x,y;
   int flag_graph;
   int zoom;
 
@@ -565,13 +567,21 @@ int main (int argc, char **argv)
   
   float coordAimants[3][2] = {{X_1,Y_1}, {X_2, Y_2}, {X_3, Y_3}};
   float result[4];    //[x,y,u,v]
-  bool b = Euler(0, 0.2, -1.6, 0, 0, coordAimants, result, MatPts);
+  int b = Euler(0, 0.2, -1.6, 0, 0, coordAimants, result, MatPts);
   printf("x=%f, y=%f, u=%f, v=%f, b = %d\n", result[0], result[1], result[2], result[3], b);
 
   for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
-     {  MatPict[0][i][j]=(i+j*k*i)%255; 
-        MatPict[1][i][j]=(i+j*k*i)%255;
-        MatPict[2][i][j]=(i+j*k*i)%255;  }
+    { x = (float)(j)/WIDTH*MAX_X-2;
+      y = (float)(i)/HEIGHT*MAX_Y-2;
+      //printf("x=%f, y=%f \n", x, y);
+
+      int count = Euler(0, x, y, 0, 0, coordAimants, result, MatPts);
+      for (int m=0; m<count; m++) {
+        MatPict[0][i][j]+=1;
+        MatPict[1][i][j]+=1;
+        MatPict[2][i][j]+=1;
+      }
+    }
 
 
 
@@ -581,8 +591,8 @@ int main (int argc, char **argv)
   //par une image couleur donné par l'équation d'en bas... et non pas par 
   //les bassins d'attractions
 
-  for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
-     {  MatPict[k][i][j]=(i+j*k*i)%255; }
+  //for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
+  //   {  MatPict[k][i][j]=(i+j*k*i)%255; }
 
   //Un exemple ou la matrice de points MatPict est remplie
   //par une image en niveaux de gris  donné par l'équation d'en bas... et non pas par 
