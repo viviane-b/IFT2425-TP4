@@ -510,7 +510,6 @@ int Euler (float t, float x, float y, float u, float v, float coordAimants[3][2]
       count = 0;
     }
     
-    //printf("aimant = %d, count = %d \n", aimant, count);
 
   }
 
@@ -527,6 +526,127 @@ int Euler (float t, float x, float y, float u, float v, float coordAimants[3][2]
     return 0;
   }
 
+}
+
+//x
+float f1(float u) {
+  return u;
+}
+
+//y
+float f2(float v) {
+  return v;
+}
+
+//u
+float f3(float x, float y, float u, float coordAimants[3][2]) {
+  float sumX=0.0;
+  for (int j=0;j<3;j++){
+      sumX += (coordAimants[j][0]-x)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+    }
+    return (sumX - R*u -C*x);
+}
+
+//v
+float f4(float x, float y, float v, float coordAimants[3][2]) {
+  float sumY=0.0;
+  for (int j=0;j<3;j++){
+    sumY += (coordAimants[j][1]-y)/pow(sqrt(pow((coordAimants[j][0]-x),2) + pow((coordAimants[j][1]-y),2) + D*D),3);
+  }
+  return (sumY-R*v-C*y);
+}
+
+
+void f(float t, float x, float y, float u, float v, float coordAimants[3][2], float* derivatives) {
+  
+  derivatives[0] = f1(u);
+  derivatives[1] = f2(v);
+  derivatives[2] = f3(x, y, u, coordAimants);
+  derivatives[3] = f4(x, y, v, coordAimants);
+
+}
+
+
+int rungeKutta(float t, float x, float y, float u, float v, float coordAimants[3][2], float *result, float **MatPts) {
+  float k1[4], k2[4], k3[4], k4[4], k5[4], k6[4];
+  float tempX, tempY, tempU, tempV;
+  int count = 0;
+  int aimant;
+
+  for (int i = 0; i < NB_INTERV; i++) {
+   
+    // k1
+    f(t, x, y, u, v, coordAimants, k1); 
+
+    // k2
+    tempX = x + H * k1[0] / 4.0;
+    tempY = y + H * k1[1] / 4.0;
+    tempU = u + H * k1[2] / 4.0;
+    tempV = v + H * k1[3] / 4.0;
+    f(t + H / 4.0, tempX, tempY, tempU, tempV, coordAimants, k2);
+    
+    // k3
+    tempX = x + H * (3.0/32.0 * k1[0] + 9.0/32.0 * k2[0]);
+    tempY = y + H * (3.0/32.0 * k1[1] + 9.0/32.0 * k2[1]);
+    tempU = u + H * (3.0/32.0 * k1[2] + 9.0/32.0 * k2[2]);
+    tempV = v + H * (3.0/32.0 * k1[3] + 9.0/32.0 * k2[3]);
+    f(t + 3.0 * H / 8.0, tempX, tempY, tempU, tempV, coordAimants, k3);
+    
+    // k4
+    tempX = x + H * (1932.0/2197.0 * k1[0] - 7200.0/2197.0 * k2[0] + 7296.0/2197.0 * k3[0]);
+    tempY = y + H * (1932.0/2197.0 * k1[1] - 7200.0/2197.0 * k2[1] + 7296.0/2197.0 * k3[1]);
+    tempU = u + H * (1932.0/2197.0 * k1[2] - 7200.0/2197.0 * k2[2] + 7296.0/2197.0 * k3[2]);
+    tempV = v + H * (1932.0/2197.0 * k1[3] - 7200.0/2197.0 * k2[3] + 7296.0/2197.0 * k3[3]);
+    f(t + 12.0 * H / 13.0, tempX, tempY, tempU, tempV, coordAimants, k4);
+
+    // k5
+    tempX = x + H * (439.0/216.0 * k1[0] - 8.0 * k2[0] + 3680.0/513.0 * k3[0] - 845.0/4104.0 * k4[0]);
+    tempY = y + H * (439.0/216.0 * k1[1] - 8.0 * k2[1] + 3680.0/513.0 * k3[1] - 845.0/4104.0 * k4[1]);
+    tempU = u + H * (439.0/216.0 * k1[2] - 8.0 * k2[2] + 3680.0/513.0 * k3[2] - 845.0/4104.0 * k4[2]);
+    tempV = v + H * (439.0/216.0 * k1[3] - 8.0 * k2[3] + 3680.0/513.0 * k3[3] - 845.0/4104.0 * k4[3]);
+    f(t + H, tempX, tempY, tempU, tempV, coordAimants, k5);
+
+    // k6
+    tempX = x + H * (-8.0/27.0 * k1[0] + 2.0 * k2[0] - 3544.0/2565.0 * k3[0] + 1859.0/4104.0 * k4[0] - 11.0/40.0 * k5[0]);
+    tempY = y + H * (-8.0/27.0 * k1[1] + 2.0 * k2[1] - 3544.0/2565.0 * k3[1] + 1859.0/4104.0 * k4[1] - 11.0/40.0 * k5[1]);
+    tempU = u + H * (-8.0/27.0 * k1[2] + 2.0 * k2[2] - 3544.0/2565.0 * k3[2] + 1859.0/4104.0 * k4[2] - 11.0/40.0 * k5[2]);
+    tempV = v + H * (-8.0/27.0 * k1[3] + 2.0 * k2[3] - 3544.0/2565.0 * k3[3] + 1859.0/4104.0 * k4[3] - 11.0/40.0 * k5[3]);
+    f(t + H/2.0, tempX, tempY, tempU, tempV, coordAimants, k6);
+        
+    x += H * (16.0/135.0 * k1[0] + 6656.0/12825.0 * k3[0] + 28561.0/56430.0 * k4[0] - 9.0/50.0 * k5[0] + 2.0/55.0 * k6[0]);
+    y += H * (16.0/135.0 * k1[1] + 6656.0/12825.0 * k3[1] + 28561.0/56430.0 * k4[1] - 9.0/50.0 * k5[1] + 2.0/55.0 * k6[1]);
+    u += H * (16.0/135.0 * k1[2] + 6656.0/12825.0 * k3[2] + 28561.0/56430.0 * k4[2] - 9.0/50.0 * k5[2] + 2.0/55.0 * k6[2]);
+    v += H * (16.0/135.0 * k1[3] + 6656.0/12825.0 * k3[3] + 28561.0/56430.0 * k4[3] - 9.0/50.0 * k5[3] + 2.0/55.0 * k6[3]);
+    
+    
+    t += H;
+
+    if (sqrt(pow((x-X_1),2)+pow((y-Y_1),2))<0.5) {
+      aimant = 1;
+      count += 1;
+    } else if (sqrt(pow((x-X_2),2)+pow((y-Y_2),2))<0.5) {
+      aimant = 2;
+      count +=1;
+    } else if (sqrt(pow((x-X_3),2)+pow((y-Y_3),2))<0.5) {
+      aimant =3;
+      count+=1;
+    } else {
+      aimant = 0;
+      count = 0;
+    }
+
+  }
+
+  result[0] = x;
+  result[1] = y;
+  result[2] = u;
+  result[3] = v;
+
+  if (count>20){
+    return count;
+  } else {
+    return 0;
+  }
 }
 
 
@@ -567,15 +687,14 @@ int main (int argc, char **argv)
   
   float coordAimants[3][2] = {{X_1,Y_1}, {X_2, Y_2}, {X_3, Y_3}};
   float result[4];    //[x,y,u,v]
-  int b = Euler(0, 0.2, -1.6, 0, 0, coordAimants, result, MatPts);
-  printf("x=%f, y=%f, u=%f, v=%f, b = %d\n", result[0], result[1], result[2], result[3], b);
+  
 
   for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
     { x = (float)(j)/WIDTH*MAX_X-2;
       y = (float)(i)/HEIGHT*MAX_Y-2;
-      //printf("x=%f, y=%f \n", x, y);
 
-      int count = Euler(0, x, y, 0, 0, coordAimants, result, MatPts);
+
+      int count = rungeKutta(0, x, y, 0, 0, coordAimants, result, MatPts);
       for (int m=0; m<count; m++) {
         MatPict[0][i][j]+=1;
         MatPict[1][i][j]+=1;
@@ -584,24 +703,6 @@ int main (int argc, char **argv)
     }
 
 
-
-  //Il faut travailler ici ...et dans > // FONCTIONS TPs
-
-  //Un exemple ou la matrice de points MatPict est remplie
-  //par une image couleur donné par l'équation d'en bas... et non pas par 
-  //les bassins d'attractions
-
-  //for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
-  //   {  MatPict[k][i][j]=(i+j*k*i)%255; }
-
-  //Un exemple ou la matrice de points MatPict est remplie
-  //par une image en niveaux de gris  donné par l'équation d'en bas... et non pas par 
-  //la vitesse de convergence
-
-  //for(k=0;k<TROIS;k++) for(i=0;i<HEIGHT;i++) for(j=0;j<WIDTH;j++) 
-  //   {  MatPict[0][i][j]=(i+j*k*i)%255; 
-  //      MatPict[1][i][j]=(i+j*k*i)%255;
-  //      MatPict[2][i][j]=(i+j*k*i)%255;  }
 
  
    //--Fin Question 2-----------------------------------------------------
@@ -614,7 +715,7 @@ int main (int argc, char **argv)
   //--------------------------- 
 
   //>Affiche Statistique
-  printf("\n\n Stat:  Xmin=[%.2f] Xmax=[%.2f] Ymin=[%.2f] Ymax=[%.2f]\n",Xmin,Xmax,Ymin,Ymax);
+  // printf("\n\n Stat:  Xmin=[%.2f] Xmax=[%.2f] Ymin=[%.2f] Ymax=[%.2f]\n",Xmin,Xmax,Ymin,Ymax);
 
  //--------------------------------------------------------------------------------
  //-------------- visu sous XWINDOW -----------------------------------------------
